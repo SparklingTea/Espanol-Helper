@@ -1,0 +1,584 @@
+<title>El o La</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{
+  --ground:#EEF1F5; --card:#FFFFFF; --card-back:#F6F8FB; --ink:#18202B; --muted:#5E6878; --line:#D5DBE4;
+  --el:#1F66A8; --el-soft:#E3EEF8; --la:#A8326B; --la-soft:#F7E4EE;
+  --ok:#1E7F4F; --ok-soft:#E1F3E9; --bad:#C0392B; --bad-soft:#FBE6E3;
+  --shadow:0 1px 2px rgba(24,32,43,.06),0 8px 28px rgba(24,32,43,.08);
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",ui-sans-serif,system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --ground:#11151B; --card:#1B222C; --card-back:#161C24; --ink:#E8ECF2; --muted:#98A2B3; --line:#2C3542;
+  --el:#6FA8E0; --el-soft:#1A2B3D; --la:#E07AAB; --la-soft:#3A1E2D;
+  --ok:#5CC98E; --ok-soft:#173026; --bad:#F07A6C; --bad-soft:#3A1D1A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --ground:#11151B; --card:#1B222C; --card-back:#161C24; --ink:#E8ECF2; --muted:#98A2B3; --line:#2C3542;
+  --el:#6FA8E0; --el-soft:#1A2B3D; --la:#E07AAB; --la-soft:#3A1E2D;
+  --ok:#5CC98E; --ok-soft:#173026; --bad:#F07A6C; --bad-soft:#3A1D1A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);
+}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;padding-inline:16px}
+.wrap{max-width:520px;margin:0 auto;padding-block:24px 40px;display:flex;flex-direction:column;gap:20px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:800;font-size:28px;letter-spacing:-.01em;margin:0}
+h1 .e{color:var(--el)} h1 .l{color:var(--la)} h1 .o{color:var(--muted);font-weight:500}
+.stats{display:flex;gap:14px;font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stats b{color:var(--ink);font-weight:700}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ink);transition:width .25s ease}
+
+.scene{perspective:1200px}
+.card{position:relative;width:100%;aspect-ratio:3/2;max-width:100%;transform-style:preserve-3d;transition:transform .45s cubic-bezier(.3,.7,.3,1);cursor:pointer;border-radius:18px}
+.card.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:18px;background:var(--card);box-shadow:var(--shadow);border:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;gap:6px}
+.back{transform:rotateY(180deg);background:var(--card-back)}
+.corner{position:absolute;top:14px;left:18px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.hint{position:absolute;bottom:14px;font-size:13px;color:var(--muted)}
+.word{font-family:var(--display);font-weight:700;font-size:clamp(34px,9vw,52px);line-height:1.1;letter-spacing:-.015em;overflow-wrap:anywhere}
+.art{color:var(--muted);font-weight:500}
+.art.el{color:var(--el)} .art.la{color:var(--la)}
+.english{font-size:clamp(22px,5.5vw,28px);font-weight:700}
+.es-small{font-size:18px;color:var(--muted)}
+.note{font-size:14px;color:var(--muted);max-width:36ch}
+.verdict{position:absolute;top:12px;right:14px;font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px}
+.verdict.ok{background:var(--ok-soft);color:var(--ok)}
+.verdict.bad{background:var(--bad-soft);color:var(--bad)}
+
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.choice{font-family:var(--display);font-weight:800;font-size:30px;padding:16px 0;border-radius:14px;border:2px solid currentColor;background:var(--card);cursor:pointer;transition:transform .08s ease,background .15s ease}
+.choice:active{transform:scale(.97)}
+.choice:focus-visible,.next:focus-visible,.link:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.choice.el{color:var(--el)} .choice.la{color:var(--la)}
+.choice.el:hover{background:var(--el-soft)} .choice.la:hover{background:var(--la-soft)}
+.choice small{display:block;font-family:var(--body);font-size:12px;font-weight:400;color:var(--muted);margin-top:2px}
+.choice.picked-ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.choice.picked-bad{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+.choice:disabled{cursor:default}
+.next{font-family:var(--body);font-weight:700;font-size:17px;padding:14px;border-radius:14px;border:0;background:var(--ink);color:var(--ground);cursor:pointer}
+.row{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.link{background:none;border:0;padding:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit}
+.link:hover{color:var(--ink)}
+kbd{font-family:var(--body);font-size:12px;border:1px solid var(--line);border-radius:4px;padding:0 5px;background:var(--card)}
+
+.done{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:24px;display:flex;flex-direction:column;gap:16px}
+.done h2{font-family:var(--display);font-size:26px;margin:0}
+.score{font-family:var(--display);font-weight:800;font-size:56px;line-height:1;font-variant-numeric:tabular-nums}
+.missed{display:flex;flex-wrap:wrap;gap:8px;list-style:none;margin:0;padding:0}
+.missed li{font-size:15px;padding:4px 10px;border-radius:999px;border:1px solid var(--line)}
+.missed li .el{color:var(--el);font-weight:700} .missed li .la{color:var(--la);font-weight:700}
+.btns{display:flex;gap:10px;flex-wrap:wrap}
+.btns .next{flex:1;min-width:160px}
+.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.inv-head{display:flex;align-items:center;gap:10px}
+.inv h2{font-size:22px}
+.count{font-family:var(--display);font-weight:800;font-size:15px;min-width:28px;text-align:center;padding:2px 9px;border-radius:999px;background:var(--bad-soft);color:var(--bad);font-variant-numeric:tabular-nums}
+.inv-sub{margin:0;font-size:14px;color:var(--muted)}
+.missed li .x{font-size:12px;color:var(--bad);font-weight:700;font-variant-numeric:tabular-nums}
+.missed li .streak1{font-size:12px;color:var(--ok);font-weight:700}
+.missed li .rm{margin-left:4px;background:none;border:0;padding:0 2px;color:var(--muted);cursor:pointer;font-size:15px;line-height:1}
+.missed li .rm:hover{color:var(--bad)}
+.confirm{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:14px}
+.mode{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:999px;background:var(--bad-soft);color:var(--bad)}
+.count.neutral{background:var(--line);color:var(--ink)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+textarea,.prev-row input{font:inherit;color:var(--ink);background:var(--ground);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;box-sizing:border-box}
+textarea{resize:vertical;min-height:96px;margin-bottom:10px}
+textarea:focus,.prev-row input:focus{outline:2px solid var(--ink);outline-offset:1px}
+#preview{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+#preview[hidden]{display:none}
+.prev-bar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.prev-status{font-size:14px;color:var(--muted)}
+.prev-status.err{color:var(--bad)}
+.prev-table{display:flex;flex-direction:column;gap:8px}
+.prev-row{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:8px;align-items:center}
+.prev-row input{padding:7px 10px}
+.prev-row.skip{opacity:.5}
+.gtog{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.gtog button{font-family:var(--display);font-weight:800;font-size:15px;border:0;background:var(--card);color:var(--muted);padding:6px 10px;cursor:pointer}
+.gtog button.on.el{background:var(--el);color:var(--card)}
+.gtog button.on.la{background:var(--la);color:var(--card)}
+.gtog.missing{border-color:var(--bad)}
+.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.tag.dup{background:var(--line);color:var(--muted)}
+.tag.new{background:var(--ok-soft);color:var(--ok)}
+.tag.warn{background:var(--bad-soft);color:var(--bad);border:0;cursor:pointer;font-family:inherit}
+.prev-note{grid-column:2/-1;font-size:13px;color:var(--muted);margin-top:-4px}
+details summary{cursor:pointer;font-size:14px;color:var(--muted);margin-bottom:10px}
+@media (max-width:480px){.prev-row{grid-template-columns:auto 1fr auto}.prev-row .en{grid-column:2/-1;grid-row:2}}
+@media (prefers-reduced-motion:reduce){.card,.bar i,.choice{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1><span class="e">El</span> <span class="o">o</span> <span class="l">La</span></h1>
+    <span class="mode" id="mode" hidden>Revising mistakes</span>
+    <div class="stats">
+      <span><b id="pos">1</b> / <span id="total">0</span></span>
+      <span><b id="acc">–</b> right</span>
+      <span>streak <b id="streak">0</b></span>
+    </div>
+  </header>
+  <div class="bar"><i id="bar"></i></div>
+
+  <section id="play" style="display:flex;flex-direction:column;gap:16px">
+    <div class="scene">
+      <div class="card" id="card" role="button" tabindex="0" aria-label="Flip card">
+        <div class="face front">
+          <span class="corner">Español</span>
+          <div class="word" id="fword"></div>
+          <span class="hint">Tap to see the English</span>
+        </div>
+        <div class="face back">
+          <span class="corner">English</span>
+          <span class="verdict" id="verdict" hidden></span>
+          <div class="english" id="beng"></div>
+          <div class="es-small"><span class="art" id="bart"></span> <span id="bword"></span></div>
+          <div class="note" id="bnote" hidden></div>
+          <span class="hint">Tap to flip back</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="choices">
+      <button class="choice el" id="btnEl" data-g="El">el<small>masculino · <kbd>E</kbd></small></button>
+      <button class="choice la" id="btnLa" data-g="La">la<small>femenino · <kbd>L</kbd></small></button>
+    </div>
+    <button class="next" id="next" hidden>Next word <kbd style="background:transparent;color:inherit;border-color:currentColor">Enter</kbd></button>
+
+    <div class="row">
+      <span><kbd>Space</kbd> flips the card</span>
+      <button class="link" id="restart">New round of 50</button>
+    </div>
+  </section>
+
+  <section id="done" class="done" hidden>
+    <h2 id="doneTitle">Round complete</h2>
+    <div><span class="score" id="doneScore"></span> <span id="doneSub" style="color:var(--muted)"></span></div>
+    <div id="missWrap">
+      <div style="font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Words to review</div>
+      <ul class="missed" id="missed"></ul>
+    </div>
+    <div class="btns">
+      <button class="next" id="retryMissed">Practice missed words</button>
+      <button class="next ghost" id="again">New round of 50</button>
+    </div>
+  </section>
+
+  <section class="done inv" id="add">
+    <div class="inv-head">
+      <h2>Add words</h2>
+      <span class="count neutral" id="myCount">0</span>
+    </div>
+    <p class="inv-sub" id="addSub">Paste words the way you write your notes. Start with <b>La</b> or <b>El</b>, then separate the words with slashes. The English is optional.</p>
+    <div id="addForm">
+      <label for="paste" class="sr">Words to add</label>
+      <textarea id="paste" rows="4" placeholder="La/una mesa table/calle street/ventana&#10;El/un libro book/perro dog/problema"></textarea>
+      <div class="btns">
+        <button class="next ghost" id="parseBtn">Preview</button>
+      </div>
+      <div id="preview" hidden>
+        <div class="prev-bar">
+          <span id="prevSummary"></span>
+          <button class="link" id="checkBtn" hidden>Fill in English and check genders with Claude</button>
+        </div>
+        <div class="prev-status" id="checkStatus" hidden></div>
+        <div class="prev-table" id="prevRows"></div>
+        <div class="btns">
+          <button class="next" id="saveBtn">Add words</button>
+          <button class="next ghost" id="cancelBtn">Discard</button>
+        </div>
+      </div>
+      <div class="prev-status" id="saveStatus" hidden></div>
+    </div>
+    <details id="myWrap" hidden>
+      <summary>Words you've added</summary>
+      <ul class="missed" id="myList"></ul>
+    </details>
+  </section>
+
+  <section class="done inv" id="inv">
+    <div class="inv-head">
+      <h2>Mistake inventory</h2>
+      <span class="count" id="invCount">0</span>
+    </div>
+    <p class="inv-sub" id="invSub"></p>
+    <ul class="missed" id="invList"></ul>
+    <div class="btns" id="invBtns">
+      <button class="next" id="revise">Revise mistakes</button>
+      <button class="next ghost" id="invClear">Clear inventory</button>
+    </div>
+    <div class="confirm" id="clearConfirm" hidden>
+      <span>Remove every word from the inventory?</span>
+      <button class="link" id="clearYes">Yes, clear it</button>
+      <button class="link" id="clearNo">Keep them</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const WORDS = /*DATA*/;
+const NOTES = {
+  "aula":"Aula is feminine, but it takes el because it starts with a stressed a (las aulas in the plural).",
+  "azúcar":"Azúcar is usually masculine, though you will also see la azúcar."
+};
+const KEY = "el-o-la-v1";
+const $ = id => document.getElementById(id);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
+
+let st;
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function newRound(list, mode){
+  st = {deck: shuffle(list.map(w=>w.es)), i:0, right:0, answered:0, streak:0, missed:[], answer:null, mode: mode||"all"};
+  save(); render();
+}
+const ROUND_SIZE = 50;
+// -o masculine / -a feminine nouns follow the easy rule, so they show up less; exceptions like el problema or la radio keep full weight.
+function weight(w){
+  const end = w.es.split(" ")[0].slice(-1).toLowerCase();
+  return (end === "o" && w.g === "El") || (end === "a" && w.g === "La") ? 0.25 : 1;
+}
+function pickRound(){
+  return ALL.map(w => ({w, k: Math.pow(Math.random(), 1/weight(w))}))
+    .sort((a,b) => b.k - a.k).slice(0, ROUND_SIZE).map(x => x.w);
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}}
+
+const INV_KEY = "el-o-la-mistakes-v1";
+let inv = {};
+try{ inv = JSON.parse(localStorage.getItem(INV_KEY)) || {}; }catch(e){}
+for(const k in inv) if(typeof inv[k]==="number") inv[k] = {m:inv[k], c:0};
+function saveInv(){try{localStorage.setItem(INV_KEY,JSON.stringify(inv));}catch(e){} renderInv();}
+function renderInv(){
+  const items = Object.keys(inv).filter(es=>BY[es]).sort((a,b)=>inv[b].m-inv[a].m || a.localeCompare(b,"es"));
+  $("invCount").textContent = items.length;
+  $("invSub").textContent = items.length
+    ? "Every word you answer wrong lands here. Get it right twice in a row while revising and it leaves the list."
+    : "No mistakes saved yet. Words you get wrong will collect here.";
+  const ul = $("invList"); ul.innerHTML = "";
+  items.forEach(es=>{
+    const w = BY[es], li = document.createElement("li");
+    li.innerHTML = `<span class="${w.g.toLowerCase()}">${w.g.toLowerCase()}</span> ${esc(es)} <span style="color:var(--muted)">· ${esc(w.en||"—")}</span> <span class="x">×${inv[es].m}</span>${inv[es].c ? ' <span class="streak1" title="One more correct answer clears it">1/2 ✓</span>' : ''}`;
+    const rm = document.createElement("button");
+    rm.className = "rm"; rm.textContent = "×"; rm.setAttribute("aria-label","Remove "+es);
+    rm.onclick = () => { delete inv[es]; saveInv(); };
+    li.appendChild(rm); ul.appendChild(li);
+  });
+  $("invBtns").hidden = !items.length;
+  $("clearConfirm").hidden = true;
+  return items;
+}
+function load(){
+  try{
+    const s = JSON.parse(localStorage.getItem(KEY));
+    if(s && Array.isArray(s.deck) && s.deck.every(es=>BY[es])) return s;
+  }catch(e){}
+  return null;
+}
+let ALL = WORDS.slice(), CUSTOM = [];
+let BY = Object.fromEntries(ALL.map(w=>[w.es,w]));
+
+function render(){
+  while(st.i < st.deck.length && !BY[st.deck[st.i]]) st.deck.splice(st.i, 1);
+  const total = st.deck.length;
+  $("total").textContent = total;
+  $("pos").textContent = Math.min(st.i+1,total);
+  $("acc").textContent = st.answered ? Math.round(100*st.right/st.answered)+"%" : "–";
+  $("streak").textContent = st.streak;
+  $("bar").style.width = (100*(st.i + (st.answer?1:0))/total)+"%";
+  $("mode").hidden = st.mode !== "review";
+
+  if(st.i >= total){ return showDone(); }
+  $("play").hidden = false; $("play").style.display="flex"; $("done").hidden = true;
+
+  const w = BY[st.deck[st.i]];
+  $("fword").textContent = w.es;
+  $("beng").textContent = w.en || "—";
+  $("bword").textContent = w.es;
+  const art = $("bart");
+  const note = NOTES[w.es];
+  $("bnote").hidden = !note; $("bnote").textContent = note || "";
+
+  const card = $("card"), v = $("verdict");
+  [$("btnEl"),$("btnLa")].forEach(b=>{b.classList.remove("picked-ok","picked-bad");b.disabled=!!st.answer;});
+  if(st.answer){
+    art.textContent = w.g.toLowerCase(); art.className = "art " + w.g.toLowerCase();
+    const ok = st.answer === w.g;
+    v.hidden = false; v.className = "verdict " + (ok?"ok":"bad");
+    v.textContent = ok ? "Correct" : "It's " + w.g.toLowerCase();
+    $(st.answer==="El"?"btnEl":"btnLa").classList.add(ok?"picked-ok":"picked-bad");
+    card.classList.add("flipped");
+    $("next").hidden = false;
+  }else{
+    art.textContent = "___"; art.className = "art";
+    v.hidden = true;
+    card.classList.remove("flipped");
+    $("next").hidden = true;
+  }
+}
+
+function answer(g){
+  if(!st || st.answer || st.i >= st.deck.length) return;
+  const w = BY[st.deck[st.i]];
+  st.answer = g; st.answered++;
+  if(g === w.g){
+    st.right++; st.streak++;
+    if(st.mode === "review" && inv[w.es]){
+      inv[w.es].c++;
+      if(inv[w.es].c >= 2) delete inv[w.es];
+      else {
+        const lo = Math.min(st.i + 4, st.deck.length), pos = lo + Math.floor(Math.random()*(st.deck.length - lo + 1));
+        st.deck.splice(pos, 0, w.es);
+      }
+      saveInv();
+    }
+  }
+  else {
+    st.streak = 0; if(!st.missed.includes(w.es)) st.missed.push(w.es);
+    inv[w.es] = {m:(inv[w.es] ? inv[w.es].m : 0) + 1, c:0}; saveInv();
+  }
+  save(); render();
+  $("next").focus();
+}
+function next(){
+  if(!st || !st.answer) return;
+  st.i++; st.answer = null; save(); render();
+}
+function flip(){ if(st && st.i < st.deck.length) $("card").classList.toggle("flipped"); }
+
+function showDone(){
+  $("play").hidden = true; $("play").style.display="none"; $("done").hidden = false;
+  const pct = st.answered ? Math.round(100*st.right/st.answered) : 0;
+  $("doneScore").textContent = pct + "%";
+  $("doneSub").textContent = `${st.right} of ${st.answered} correct`;
+  $("doneTitle").textContent = st.missed.length ? "Round complete" : "Perfect round";
+  const ul = $("missed"); ul.innerHTML = "";
+  st.missed.filter(es=>BY[es]).forEach(es=>{
+    const w = BY[es], li = document.createElement("li");
+    li.innerHTML = `<span class="${w.g.toLowerCase()}">${w.g.toLowerCase()}</span> ${esc(es)} <span style="color:var(--muted)">· ${esc(w.en||"—")}</span>`;
+    ul.appendChild(li);
+  });
+  $("missWrap").hidden = !st.missed.length;
+  $("retryMissed").hidden = !st.missed.length;
+}
+
+$("btnEl").onclick = () => answer("El");
+$("btnLa").onclick = () => answer("La");
+$("next").onclick = next;
+$("card").onclick = flip;
+$("restart").onclick = () => newRound(pickRound());
+$("again").onclick = () => newRound(pickRound());
+$("retryMissed").onclick = () => newRound(st.missed.filter(es=>BY[es]).map(es=>BY[es]), st.mode);
+$("revise").onclick = () => {
+  const items = renderInv();
+  if(items.length){ newRound(items.map(es=>BY[es]), "review"); window.scrollTo({top:0,behavior:"smooth"}); }
+};
+$("invClear").onclick = () => { $("clearConfirm").hidden = false; };
+$("clearNo").onclick = () => { $("clearConfirm").hidden = true; };
+$("clearYes").onclick = () => { inv = {}; saveInv(); };
+let db = null, sampleFn = null, rows = [];
+function rebuild(){
+  const base = new Set(WORDS.map(w=>w.es.toLowerCase()));
+  ALL = WORDS.concat(CUSTOM.filter(w=>!base.has(w.es.toLowerCase())));
+  BY = Object.fromEntries(ALL.map(w=>[w.es,w]));
+}
+function pendingSaved(){
+  try{ const s = JSON.parse(localStorage.getItem(KEY)); return !!(s && Array.isArray(s.deck)); }catch(e){ return false; }
+}
+function begin(){ if(!st){ st = load(); if(st) render(); else newRound(pickRound()); } }
+function status(id, msg, err){ const el = $(id); el.hidden = !msg; el.textContent = msg || ""; el.classList.toggle("err", !!err); }
+
+async function startCustom(){
+  const timer = setTimeout(begin, 4000);
+  const use = name => window.claude && window.claude.use ? window.claude.use(name).catch(()=>null) : Promise.resolve(null);
+  use("sample").then(s => { sampleFn = s; renderRows(); });
+  db = await use("db");
+  if(!db){
+    clearTimeout(timer); begin();
+    $("addForm").hidden = true;
+    $("addSub").textContent = "Adding words needs the page's word storage, which isn't available here. Open the page from its claude.ai link to add words.";
+    return;
+  }
+  db.collection("words").onSnapshot(snap => {
+    CUSTOM = snap.docs.map(d => Object.assign({id:d.id}, d.data())).filter(w => w.es && (w.g==="El"||w.g==="La"));
+    rebuild(); renderMine(); renderInv();
+    if(rows.length) renderRows();
+    if(st) render(); else { clearTimeout(timer); begin(); }
+  }, () => {
+    clearTimeout(timer); begin();
+    status("saveStatus", "Your added words couldn't be loaded. Reload the page to try again.", true);
+  });
+}
+
+function renderMine(){
+  $("myCount").textContent = CUSTOM.length;
+  $("myWrap").hidden = !CUSTOM.length;
+  const ul = $("myList"); ul.innerHTML = "";
+  CUSTOM.slice().sort((a,b)=>a.es.localeCompare(b.es,"es")).forEach(w=>{
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="${w.g.toLowerCase()}">${w.g.toLowerCase()}</span> ${esc(w.es)} <span style="color:var(--muted)">· ${esc(w.en||"—")}</span>`;
+    const rm = document.createElement("button");
+    rm.className = "rm"; rm.textContent = "×"; rm.setAttribute("aria-label","Remove "+w.es);
+    rm.onclick = () => db.doc("words/"+w.id).delete().catch(()=>status("saveStatus","That word couldn't be removed. Try again.",true));
+    li.appendChild(rm); ul.appendChild(li);
+  });
+}
+
+function parseNotes(text){
+  const out = []; let g = null;
+  const multi = ALL.map(w=>w.es).filter(es=>es.includes(" ")).sort((a,b)=>b.length-a.length);
+  text.split(/\n/).forEach(line => line.split("/").forEach(raw => {
+    let seg = raw.trim().replace(/\s+/g," ");
+    if(!seg) return;
+    const low = seg.toLowerCase();
+    if(/^(el|la)[:.]?$/.test(low)){ g = low.startsWith("el") ? "El" : "La"; return; }
+    if(/^(un|una)$/.test(low)) return;
+    seg = seg.replace(/^(un|una)\s+/i, "");
+    let rowG = g;
+    const art = seg.match(/^(el|la)\s+(.+)$/i);
+    if(art){ rowG = art[1].toLowerCase()==="el" ? "El" : "La"; seg = art[2]; }
+    let es, en = "";
+    const sep = seg.match(/^(.+?)\s*(?:=|:|\s[-–—]\s)\s*(.*)$/);
+    const k = multi.find(p => seg.toLowerCase()===p.toLowerCase() || seg.toLowerCase().startsWith(p.toLowerCase()+" "));
+    const de = seg.match(/^(\S+ de \S+)(?:\s+(.*))?$/i);
+    if(sep){ es = sep[1]; en = sep[2]; }
+    else if(k){ es = seg.slice(0,k.length); en = seg.slice(k.length); }
+    else if(de){ es = de[1]; en = de[2] || ""; }
+    else { const i = seg.indexOf(" "); es = i<0 ? seg : seg.slice(0,i); en = i<0 ? "" : seg.slice(i+1); }
+    out.push({es: es.trim(), en: en.trim(), g: rowG, note: "", suggest: null});
+  }));
+  return out;
+}
+
+function markDups(){
+  const seen = new Set();
+  rows.forEach(r => {
+    const key = r.es.toLowerCase();
+    const known = ALL.find(w => w.es.toLowerCase() === key);
+    r.dup = !!known || seen.has(key);
+    if(known && !r.en) r.en = known.en;
+    seen.add(key);
+  });
+}
+
+function renderRows(){
+  if(!rows.length){ $("preview").hidden = true; return; }
+  markDups();
+  $("preview").hidden = false;
+  const box = $("prevRows"); box.innerHTML = "";
+  rows.forEach((r, i) => {
+    const row = document.createElement("div");
+    row.className = "prev-row" + (r.dup ? " skip" : "");
+    const tog = document.createElement("div");
+    tog.className = "gtog" + (!r.g && !r.dup ? " missing" : "");
+    ["El","La"].forEach(g => {
+      const b = document.createElement("button");
+      b.textContent = g.toLowerCase(); b.className = g.toLowerCase() + (r.g===g ? " on" : "");
+      b.setAttribute("aria-pressed", r.g===g);
+      b.onclick = () => { r.g = g; r.suggest = null; renderRows(); };
+      tog.appendChild(b);
+    });
+    const es = document.createElement("input");
+    es.id = "prev-es-"+i; es.value = r.es; es.setAttribute("aria-label","Spanish");
+    es.onchange = () => { r.es = es.value.trim(); renderRows(); };
+    const en = document.createElement("input");
+    en.id = "prev-en-"+i; en.className = "en"; en.value = r.en; en.placeholder = "English"; en.setAttribute("aria-label","English");
+    en.oninput = () => { r.en = en.value; };
+    let tag;
+    if(r.dup){ tag = document.createElement("span"); tag.className = "tag dup"; tag.textContent = "Already in deck"; }
+    else if(r.suggest){
+      tag = document.createElement("button"); tag.className = "tag warn";
+      tag.textContent = "Claude says " + r.suggest.toLowerCase();
+      tag.title = "Switch to " + r.suggest.toLowerCase();
+      tag.onclick = () => { r.g = r.suggest; r.suggest = null; renderRows(); };
+    }
+    else if(!r.g){ tag = document.createElement("span"); tag.className = "tag warn"; tag.textContent = "Pick el or la"; }
+    else { tag = document.createElement("span"); tag.className = "tag new"; tag.textContent = "New"; }
+    row.append(tog, es, en, tag);
+    if(r.note && !r.dup){ const n = document.createElement("div"); n.className = "prev-note"; n.textContent = r.note; row.appendChild(n); }
+    box.appendChild(row);
+  });
+  const ready = rows.filter(r => !r.dup && r.es && r.g).length;
+  const dups = rows.filter(r => r.dup).length;
+  const unset = rows.filter(r => !r.dup && r.es && !r.g).length;
+  $("prevSummary").textContent = [`${ready} ready to add`, dups && `${dups} already in your deck`, unset && `${unset} need el or la`].filter(Boolean).join(" · ");
+  $("saveBtn").disabled = !ready;
+  $("saveBtn").textContent = ready ? `Add ${ready} word${ready===1?"":"s"}` : "Add words";
+  $("checkBtn").hidden = !sampleFn || !rows.some(r => !r.dup && r.es);
+}
+
+$("parseBtn").onclick = () => {
+  rows = parseNotes($("paste").value);
+  status("saveStatus", rows.length ? "" : "Nothing to preview yet. Paste some words first.");
+  status("checkStatus", "");
+  renderRows();
+};
+$("cancelBtn").onclick = () => { rows = []; renderRows(); status("checkStatus",""); };
+
+$("checkBtn").onclick = async () => {
+  const list = rows.filter(r => !r.dup && r.es);
+  if(!list.length || !sampleFn) return;
+  $("checkBtn").disabled = true;
+  status("checkStatus", "Asking Claude…");
+  try{
+    const res = await sampleFn.json(
+      "You are checking Spanish vocabulary for a learner drilling noun gender. For each item give a short English meaning (1-4 words; keep the learner's own if it is right) and the definite article used with the singular noun, \"El\" or \"La\". Feminine nouns that take el in the singular because they start with a stressed a (agua, aula) get \"El\" plus a short note. If the Spanish looks misspelled, is plural, or is not a noun, say so in the note. Otherwise leave the note empty. Reply with only a JSON array in the same order, each item {\"es\": string, \"en\": string, \"g\": \"El\" or \"La\", \"note\": string}.\n\nItems:\n"
+      + JSON.stringify(list.map(r => ({es: r.es, en: r.en, g: r.g || "?"}))),
+      {modelTier: "quick"});
+    if(!Array.isArray(res)) throw {code: "invalid_json"};
+    res.forEach((a, i) => {
+      const r = list[i]; if(!r || !a) return;
+      if(!r.en && a.en) r.en = String(a.en);
+      if(a.g === "El" || a.g === "La"){ if(!r.g) r.g = a.g; else if(r.g !== a.g) r.suggest = a.g; }
+      r.note = a.note ? String(a.note) : "";
+    });
+    renderRows();
+    status("checkStatus", rows.some(r => r.suggest) ? "Checked. Tap a red tag to switch the article, or leave yours." : "Checked. Everything looks right.");
+  }catch(e){
+    status("checkStatus",
+      e && e.code === "not_granted" ? "Claude wasn't allowed to run, so nothing was checked." :
+      e && e.code === "rate_limited" ? "Too many requests right now. Try again in a minute." :
+      "The check didn't finish. Try again.", true);
+  }finally{ $("checkBtn").disabled = false; }
+};
+
+$("saveBtn").onclick = async () => {
+  const add = rows.filter(r => !r.dup && r.es && r.g);
+  if(!add.length || !db) return;
+  $("saveBtn").disabled = true;
+  let n = 0;
+  try{
+    for(const r of add){
+      await db.collection("words").add({es: r.es, en: r.en.trim(), g: r.g, added: new Date().toISOString()});
+      n++;
+    }
+    rows = []; renderRows(); $("paste").value = ""; status("checkStatus","");
+    status("saveStatus", `Added ${n} word${n===1?"":"s"}. They'll show up in your next rounds.`);
+  }catch(e){
+    rows = rows.filter(r => !add.slice(0,n).includes(r)); renderRows();
+    status("saveStatus", e && e.code === "quota_exceeded" ? `Added ${n}. The word list is full, so remove some words before adding more.` : `Added ${n} of ${add.length}. The rest couldn't be saved. Try again.`, true);
+  }
+};
+
+document.addEventListener("keydown", e=>{
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  const k = e.key.toLowerCase();
+  if(k==="e"){ answer("El"); }
+  else if(k==="l"){ answer("La"); }
+  else if(k==="enter"){ if(st && st.answer){ e.preventDefault(); next(); } }
+  else if(k===" "){ e.preventDefault(); flip(); }
+});
+
+renderInv();
+st = load();
+if(st) render(); else if(!pendingSaved()) newRound(pickRound());
+startCustom();
+</script>
