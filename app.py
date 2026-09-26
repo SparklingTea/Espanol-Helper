@@ -1,11 +1,13 @@
 import json
 import re
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 from openpyxl import load_workbook
+from spellchecker import SpellChecker
 
 here = Path(__file__).parent
 HEADER = ["Español", "English", "Gender", "Added"]
@@ -66,6 +68,51 @@ def build_page(words_json):
     return html.replace("</style>", "#add{display:none!important}</style>", 1)
 
 
+def fold(s):
+    return "".join(c for c in unicodedata.normalize("NFD", s.lower()) if unicodedata.category(c) != "Mn")
+
+
+@st.cache_resource
+def spanish():
+    sp = SpellChecker(language="es")
+    accented = {}
+    for w, f in sp.word_frequency.items():
+        k = fold(w)
+        if k not in accented or f > accented[k][1]:
+            accented[k] = (w, f)
+    return sp, {k: w for k, (w, _) in accented.items()}
+
+
+def fix_spelling(rows, deck):
+    """Snap words typed without accents to the deck or the dictionary; flag likely typos."""
+    sp, accented = spanish()
+    fixed, typos = [], []
+    for r in rows:
+        es = r["Español"]
+        if fold(es) in deck:
+            if deck[fold(es)] != es:
+                fixed.append(f"{es} → {deck[fold(es)]}")
+                r["Español"] = deck[fold(es)]
+            continue
+        words = []
+        for t in es.split(" "):
+            low = t.lower()
+            if low in sp or low == "de":
+                words.append(t)
+            elif fold(low) in accented:
+                words.append(accented[fold(low)])
+            else:
+                guess = sp.correction(low)
+                if guess and guess != low:
+                    typos.append(f"{t} (did you mean {guess}?)")
+                words.append(t)
+        new = " ".join(words)
+        if new != es:
+            fixed.append(f"{es} → {new}")
+            r["Español"] = new
+    return fixed, typos
+
+
 def parse_notes(text, known):
     multi = sorted((w for w in known if " " in w), key=len, reverse=True)
     out, g = [], None
@@ -106,8 +153,8 @@ try:
     sheet_error = None
 except Exception as e:
     added, sheet_error = [], e
-base = {w["es"].lower() for w in excel}
-all_words = excel + [{k: w[k] for k in ("es", "en", "g")} for w in added if w["es"].lower() not in base]
+base = {fold(w["es"]) for w in excel}
+all_words = excel + [{k: w[k] for k in ("es", "en", "g")} for w in added if fold(w["es"]) not in base]
 
 st.iframe(build_page(json.dumps(all_words, ensure_ascii=False)), height=1200)
 
@@ -134,13 +181,21 @@ def add_words_panel():
     st.write("Paste words the way you write your notes. Start with **La** or **El**, then separate words with slashes. The English is optional.")
     text = st.text_area("Words to add", key="paste", placeholder="La/una mesa table/calle street/ventana\nEl/un libro book/perro dog/problema", label_visibility="collapsed")
     if st.button("Preview"):
-        st.session_state.preview = parse_notes(text, [w["es"] for w in all_words])
-        if not st.session_state.preview:
+        rows = parse_notes(text, [w["es"] for w in all_words])
+        st.session_state.preview = rows
+        st.session_state.spelling = fix_spelling(rows, {fold(w["es"]): w["es"] for w in all_words})
+        st.session_state.pop("editor", None)
+        if not rows:
             st.info("Nothing to preview yet. Paste some words first.")
 
     rows = st.session_state.get("preview") or []
     if rows:
-        known = {w["es"].lower(): w for w in all_words}
+        fixed, typos = st.session_state.get("spelling", ([], []))
+        if fixed:
+            st.info("Spelling corrected: " + ", ".join(fixed) + ". Edit the table if a change is wrong.")
+        if typos:
+            st.warning("Check the spelling of: " + "; ".join(typos))
+        known = {fold(w["es"]) for w in all_words}
         df = pd.DataFrame(rows, columns=["Gender", "Español", "English"])
         edited = st.data_editor(
             df,
@@ -155,13 +210,13 @@ def add_words_panel():
             es = str(r["Español"]).strip()
             if not es:
                 continue
-            if es.lower() in known or es.lower() in seen:
+            if fold(es) in known or fold(es) in seen:
                 dups.append(es)
             elif r["Gender"] not in ("El", "La"):
                 unset.append(es)
             else:
                 ready.append([es, str(r["English"]).strip(), r["Gender"]])
-            seen.add(es.lower())
+            seen.add(fold(es))
         if dups:
             st.caption("Already in your deck, will be skipped: " + ", ".join(dups))
         if unset:
@@ -191,9 +246,12 @@ def add_words_panel():
 
     if added:
         with st.expander(f"Words you've added ({len(added)})"):
-            df = pd.DataFrame([{"Remove": False, "el / la": w["g"], "Español": w["es"], "English": w["en"]} for w in added])
+            in_deck = {fold(w["es"]): w["es"] for w in excel}
+            df = pd.DataFrame([{"Remove": False, "el / la": w["g"], "Español": w["es"], "English": w["en"],
+                                "Note": f"Same as {in_deck[fold(w['es'])]}, already in your deck" if fold(w["es"]) in in_deck else ""}
+                               for w in added])
             out = st.data_editor(df, key="mine", hide_index=True, width="stretch",
-                                 disabled=["el / la", "Español", "English"])
+                                 disabled=["el / la", "Español", "English", "Note"])
             picked = [added[i] for i in out.index[out["Remove"]]]
             if st.button(f"Remove {len(picked)} selected", disabled=not picked):
                 try:
